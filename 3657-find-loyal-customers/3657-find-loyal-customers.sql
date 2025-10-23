@@ -6,4 +6,4 @@ and
 datediff(max(transaction_date),min(transaction_date))>29
 and
 sum(transaction_type ='refund')/count(*)<0.2
-order by 1
+order by 1;
