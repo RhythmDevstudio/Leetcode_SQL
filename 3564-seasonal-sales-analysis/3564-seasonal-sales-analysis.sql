@@ -1,31 +1,17 @@
-WITH A AS (
-    SELECT product_id, sale_date, quantity, price,
-        CASE 
-            WHEN MONTH(sale_date) BETWEEN 3 AND 5 THEN 'Spring'
-            WHEN MONTH(sale_date) BETWEEN 6 AND 8 THEN 'Summer'
-            WHEN MONTH(sale_date) BETWEEN 9 AND 11 THEN 'Fall'
-            ELSE 'Winter'
-        END AS season
-    FROM sales
+with cte as(
+    select case
+    when month(a.sale_date) in (12,1,2) then 'Winter'
+    when month(a.sale_date) in (3,4,5) then 'Spring'
+    when month(a.sale_date) in (6,7,8) then 'Summer'
+    else 'Fall'
+    end as season,
+    b.category,
+    sum(a.quantity) as total_quantity,
+    sum(a.quantity*a.price) as total_revenue
+    from sales a join products b on a.product_id=b.product_id 
+    group by season,b.category
 ),
-
-B AS (
-    SELECT 
-        season, 
-        category, 
-        SUM(quantity) AS total_quantity, 
-        SUM(quantity * price) AS total_revenue 
-    FROM A 
-    JOIN products ON A.product_id = products.product_id 
-    GROUP BY season, category 
-),
-
-C AS (
-    SELECT *, ROW_NUMBER() OVER (PARTITION BY season ORDER BY total_quantity DESC, total_revenue DESC) AS rn
-    FROM B
+ctes as (
+    select *, row_number() over (partition by season order by total_quantity desc,total_revenue desc ) as rn from cte
 )
-
-SELECT season, category, total_quantity, total_revenue
-FROM C
-WHERE rn = 1;
- 
+select season,category,total_quantity,total_revenue from ctes where rn=1;
